@@ -21,5 +21,5 @@ clean: ## Stop and remove containers created by the docker-compose up command
 	${DC} down
 
 .PHONY: server-shell
-server-shell: ## Start a bash shell inside the server container
+server-shell: ## Start a shell inside the server container
 	${DC} exec server /bin/sh
