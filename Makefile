@@ -23,3 +23,7 @@ clean: ## Stop and remove containers created by the docker-compose up command
 .PHONY: server-shell
 server-shell: ## Start a shell inside the server container
 	${DC} exec server /bin/sh
+
+.PHONY: logs
+logs: ## Show logs of all containers in the project
+	${DC} logs -f
