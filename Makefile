@@ -13,7 +13,7 @@ server: ## Start the Django server through docker-compose
 	${DC} up -d
 
 .PHONY: shell
-shell: ## Start a new container running the bash shell
+shell: ## Start a new container running a shell
 	${DC} run --rm --entrypoint="/bin/sh" server
 
 .PHONY: clean
@@ -27,3 +27,9 @@ server-shell: ## Start a shell inside the server container
 .PHONY: logs
 logs: ## Show logs of all containers in the project
 	${DC} logs -f
+
+.PHONY: status
+status: ## List containers and their running processes
+	${DC} ps
+	@echo
+	${DC} top
