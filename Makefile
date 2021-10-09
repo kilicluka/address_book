@@ -33,3 +33,7 @@ status: ## List containers and their running processes
 	${DC} ps
 	@echo
 	${DC} top
+
+.Phony: db-shell
+db-shell: ## Run a PostgreSQL shell
+	${DC} run -e "PGPASSWORD=server" --rm --entrypoint="psql --host=db --dbname=server --user=server" db
