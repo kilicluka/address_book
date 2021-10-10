@@ -44,7 +44,7 @@ db-shell: ## Run a PostgreSQL shell
 
 .PHONY: test
 test: ## Run tests through pytest
-	${DC} run --rm --entrypoint="pytest" server
+	${DC} run --rm --entrypoint="pytest -W ignore::DeprecationWarning" server
 
 .PHONY: makemigrations
 makemigrations: ## Create Django migrations
