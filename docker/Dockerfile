@@ -26,14 +26,32 @@ RUN set -ex \
 
 WORKDIR ${PROJECT_DIR}/src
 
-RUN set -ex && chown -R ${APP_USER}:${APP_USER} ${PROJECT_DIR}
-
-COPY requirements.txt /srv/
+COPY requirements/common.txt /srv/requirements/
 
 RUN set -ex \
-    && pip3 install -r /srv/requirements.txt \
+    && pip3 install -r /srv/requirements/common.txt \
     && apk del .build-deps
 
-COPY src/ ${PROJECT_DIR}
+COPY src/ ${PROJECT_DIR}/src/
+
+
+FROM base as production
+
+RUN set -ex && rm -rf /srv/requirements
+
+RUN set -ex && chown -R ${APP_USER}:${APP_USER} ${PROJECT_DIR}
+
+USER ${APP_USER}
+
+
+FROM base as development
+
+COPY requirements/dev.txt /srv/requirements/
+
+RUN set -ex \
+    && pip3 install -r /srv/requirements/dev.txt \
+    && rm -rf /srv/requirements
+
+RUN set -ex && chown -R ${APP_USER}:${APP_USER} ${PROJECT_DIR}
 
 USER ${APP_USER}
