@@ -1,7 +1,5 @@
 DC = docker-compose -p address_book -f docker/docker-compose.yml
-IMAGE_TAG ?= latest
 DOCKERFILE_ARGS ?= -f docker/Dockerfile
-TARGET_ENV ?= development
 
 .PHONY: help
 help:
@@ -9,7 +7,10 @@ help:
 
 .PHONY: build
 build: ## Build the docker images needed to run the server
-	docker build -t address_book_${TARGET_ENV}:${IMAGE_TAG} --target ${TARGET_ENV} ${DOCKERFILE_ARGS} .
+build: tag ?= latest
+build: env ?= development
+build:
+	docker build -t address_book_${env}:${tag} --target ${env} ${DOCKERFILE_ARGS} .
 
 .PHONY: server
 server: ## Start the Django server through docker-compose
