@@ -41,6 +41,7 @@ DJANGO_APPS = [
 
 EXTERNAL_APPS = [
     'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 PROJECT_APPS = [
@@ -60,6 +61,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 ROOT_URLCONF = 'address_book.urls'
 
