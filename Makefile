@@ -41,3 +41,9 @@ status: ## List containers and their running processes
 .PHONY: db-shell
 db-shell: ## Run a PostgreSQL shell
 	${DC} run -e "PGPASSWORD=server" --rm --entrypoint="psql --host=db --dbname=server --user=server" db
+
+.PHONY: test
+test: ## Run tests through pytest
+test: args ?=
+test:
+	${DC} run --rm --entrypoint="pytest" server ${args}
