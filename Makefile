@@ -6,7 +6,7 @@ help:
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 .PHONY: build
-build: ## Build the docker images needed to run the server
+build: ## Build the docker images needed to run the server. Use 'tag' and 'env' arguments to change the image tag and env
 build: tag ?= latest
 build: env ?= development
 build:
@@ -44,6 +44,15 @@ db-shell: ## Run a PostgreSQL shell
 
 .PHONY: test
 test: ## Run tests through pytest
-test: args ?=
-test:
-	${DC} run --rm --entrypoint="pytest" server ${args}
+	${DC} run --rm --entrypoint="pytest" server
+
+.PHONY: makemigrations
+makemigrations: ## Create Django migrations
+	${DC} run --rm --entrypoint="python manage.py makemigrations" server
+
+.PHONY: migrate
+migrate: ## Apply Django migrations. Use 'app' and 'name' arguments to specify a Django app and a specific migration
+migrate: app ?=
+migrate: name ?=
+migrate:
+	${DC} run --rm --entrypoint="python manage.py migrate ${app} ${name}" server
