@@ -3,13 +3,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from address.models import Address
+from address.models import Address, UserAddress
 from address.serializers import AddressSerializer, UserAddressSerializer
 
 
 class UserAddressViewSet(viewsets.ModelViewSet):
     serializer_class = UserAddressSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserAddress.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         address_serializer = AddressSerializer(data=request.data)
