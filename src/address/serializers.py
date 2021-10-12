@@ -9,7 +9,6 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = [
-            'uuid',
             'country',
             'state',
             'city',
@@ -32,10 +31,11 @@ class UserAddressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserAddress
-        fields = ['user', 'address', 'additional_address_data']
+        fields = ['uuid', 'user', 'address', 'additional_address_data']
 
     def to_representation(self, instance):
         return {
+            'uuid': str(instance.uuid),
             **AddressSerializer(instance.address).data,
             'address_two': instance.additional_address_data
         }

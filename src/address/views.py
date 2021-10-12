@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,28 +11,49 @@ from address.serializers import AddressSerializer, UserAddressSerializer
 class UserAddressViewSet(viewsets.ModelViewSet):
     serializer_class = UserAddressSerializer
     permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'uuid'
+
+    def create(self, request, *args, **kwargs):
+        return Response(self._store_user_address(), status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        user_address = self.get_object()
+        return Response(self._store_user_address(user_address), status=status.HTTP_200_OK)
 
     def get_queryset(self):
         return UserAddress.objects.filter(user=self.request.user)
 
-    def create(self, request, *args, **kwargs):
-        address_serializer = AddressSerializer(data=request.data)
-        address_serializer.is_valid(raise_exception=True)
-        address, _ = Address.objects.get_or_create(
-            zip_code=address_serializer.validated_data['zip_code'],
-            address_one=address_serializer.validated_data['address_one'],
-            defaults=address_serializer.validated_data
-        )
+    def get_object(self):
+        filters = {self.lookup_url_kwarg: self.kwargs[self.lookup_url_kwarg]}
+        return get_object_or_404(self.get_queryset(), **filters)
 
+    def _store_user_address(self, user_address_instance=None):
+        address = self._get_address_instance(self.request.data)
         user_address_serializer = UserAddressSerializer(
+            user_address_instance,
             data={
-                'user': request.user.pk,
+                'user': self.request.user.pk,
                 'address': address.pk,
-                'additional_address_data': request.data.get('address_two', '')
+                'additional_address_data': self.request.data.get('address_two', '')
             }
         )
 
         user_address_serializer.is_valid(raise_exception=True)
         user_address_serializer.save()
 
-        return Response(user_address_serializer.data, status=status.HTTP_201_CREATED)
+        return user_address_serializer.data
+
+    def _get_address_instance(self, address_data):
+        address_serializer = AddressSerializer(data=address_data)
+        address_serializer.is_valid(raise_exception=True)
+
+        address, _ = Address.objects.get_or_create(
+            country=address_serializer.validated_data['country'],
+            state=address_serializer.validated_data['state'],
+            city=address_serializer.validated_data['city'],
+            zip_code=address_serializer.validated_data['zip_code'],
+            address_one=address_serializer.validated_data['address_one'],
+            defaults=address_serializer.validated_data
+        )
+
+        return address
