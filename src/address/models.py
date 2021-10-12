@@ -27,6 +27,9 @@ class Address(models.Model):
             models.Index(fields=('uuid',))
         ]
 
+    def __str__(self):
+        return f'{self.city}, {self.country} - {self.address_one}'
+
 
 class UserAddress(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
