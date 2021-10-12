@@ -89,7 +89,7 @@ def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
     response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
 
     assert response.status_code == HTTP_400_BAD_REQUEST
-    assert response.data == 'You already have an address with those zip_code and address_one values.'
+    assert str(response.data['non_field_errors'][0]) == 'The fields user, address must make a unique set.'
 
     _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
