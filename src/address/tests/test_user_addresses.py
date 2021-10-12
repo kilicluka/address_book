@@ -27,8 +27,9 @@ def user_address_data():
 
 @pytest.fixture
 def address_instance(user_address_data):
-    user_address_data.pop('address_two')
-    return Address.objects.create(**user_address_data)
+    address_data = dict(user_address_data)
+    address_data.pop('address_two')
+    return Address.objects.create(**address_data)
 
 
 @pytest.fixture
@@ -62,11 +63,9 @@ def test_when_user_is_authenticated__they_can_create_an_address(
     user_address_data,
     authenticated_user
 ):
-    assert UserAddress.objects.filter(user=authenticated_user).count() == 0
-    assert Address.objects.count() == 0
+    _assert_address_and_user_address_counts(authenticated_user, 0, 0)
 
     response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
-
     user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_201_CREATED
@@ -74,8 +73,8 @@ def test_when_user_is_authenticated__they_can_create_an_address(
         'uuid': str(user_address.address.uuid),
         **user_address_data
     }
-    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
-    assert Address.objects.count() == 1
+
+    _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -85,8 +84,7 @@ def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
     user_address_data,
     authenticated_user
 ):
-    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
-    assert Address.objects.count() == 1
+    _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
     response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
 
@@ -95,3 +93,29 @@ def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
 
     assert UserAddress.objects.filter(user=authenticated_user).count() == 1
     assert Address.objects.count() == 1
+
+
+def test_when_address_is_already_in_database__new_one_is_not_created(
+    authenticated_client,
+    address_instance,
+    user_address_data,
+    authenticated_user
+):
+    _assert_address_and_user_address_counts(authenticated_user, 1, 0)
+
+    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
+    user_address = UserAddress.objects.get(user=authenticated_user)
+    print('mrs')
+
+    assert response.status_code == HTTP_201_CREATED
+    assert response.data == {
+        'uuid': str(user_address.address.uuid),
+        **user_address_data
+    }
+
+    _assert_address_and_user_address_counts(authenticated_user, 1, 1)
+
+
+def _assert_address_and_user_address_counts(user, address_count, user_address_count):
+    assert Address.objects.count() == address_count
+    assert UserAddress.objects.filter(user=user).count() == user_address_count
