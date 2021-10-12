@@ -5,7 +5,6 @@ from django.db import models
 
 
 class Address(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     country = models.CharField(max_length=128, blank=False)
     state = models.CharField(max_length=128, blank=True)
     city = models.CharField(max_length=128, blank=False)
@@ -21,17 +20,14 @@ class Address(models.Model):
         db_table = 'addresses'
         get_latest_by = 'created_at'
         ordering = ('created_at',)
-        unique_together = ('country', 'zip_code', 'address_one',)
-
-        indexes = [
-            models.Index(fields=('uuid',))
-        ]
+        unique_together = ('country', 'state', 'city', 'zip_code', 'address_one',)
 
     def __str__(self):
-        return f'{self.city}, {self.country} - {self.address_one}'
+        return f'{self.country} ({self.state}) {self.zip_code} {self.city}, {self.address_one}'
 
 
 class UserAddress(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     address = models.ForeignKey(Address, on_delete=models.CASCADE)
     additional_address_data = models.CharField(max_length=1024, blank=True)
@@ -45,3 +41,7 @@ class UserAddress(models.Model):
         get_latest_by = 'created_at'
         ordering = ('created_at',)
         unique_together = ('user', 'address',)
+
+        indexes = [
+            models.Index(fields=('uuid',))
+        ]
