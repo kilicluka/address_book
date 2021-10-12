@@ -21,7 +21,7 @@ def user_address_data():
         'city': 'Split',
         'zip_code': '21000',
         'address_one': 'Split Address 15',
-        'address_two': '',
+        'address_two': '3rd floor',
     }
 
 
@@ -91,8 +91,7 @@ def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert response.data == 'You already have an address with those zip_code and address_one values.'
 
-    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
-    assert Address.objects.count() == 1
+    _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
 
 def test_when_address_is_already_in_database__new_one_is_not_created(
@@ -105,7 +104,6 @@ def test_when_address_is_already_in_database__new_one_is_not_created(
 
     response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
     user_address = UserAddress.objects.get(user=authenticated_user)
-    print('mrs')
 
     assert response.status_code == HTTP_201_CREATED
     assert response.data == {

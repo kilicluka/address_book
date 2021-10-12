@@ -31,7 +31,6 @@ class AddressSerializer(serializers.ModelSerializer):
 class UserAddressSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     address = AddressSerializer()
-    additional_address_data = serializers.CharField(source='address_two', allow_blank=True, required=False, default='')
 
     class Meta:
         model = UserAddress
@@ -39,11 +38,17 @@ class UserAddressSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         address_data = dict(self.initial_data)
-        self.initial_data = {'user': self.context['request'].user, 'address': address_data}
+        additional_address_data = address_data.pop('address_two', '')
+        self.initial_data = {
+            'user': self.context['request'].user,
+            'address': address_data,
+            'additional_address_data': additional_address_data
+        }
 
     def create(self, validated_data):
-        address_two = validated_data.pop('address_two')
+        additional_address_data = validated_data.pop('additional_address_data')
 
         address, _ = Address.objects.get_or_create(
             zip_code=validated_data['address']['zip_code'],
@@ -54,7 +59,7 @@ class UserAddressSerializer(serializers.ModelSerializer):
         return UserAddress.objects.create(
             user=self.context['request'].user,
             address=address,
-            additional_address_data=address_two
+            additional_address_data=additional_address_data
         )
 
     def to_representation(self, instance):
