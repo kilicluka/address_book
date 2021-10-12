@@ -14,20 +14,32 @@ def api_client():
 
 
 @pytest.fixture
-def user_address_data():
+def user_home_address_data():
     return {
         'country': 'Croatia',
         'state': '',
         'city': 'Split',
         'zip_code': '21000',
-        'address_one': 'Split Address 15',
+        'address_one': 'Home Address 15',
         'address_two': '3rd floor',
     }
 
 
 @pytest.fixture
-def address_instance(user_address_data):
-    address_data = dict(user_address_data)
+def user_work_address_data():
+    return {
+        'country': 'Croatia',
+        'state': 'Croatia',
+        'city': 'Split',
+        'zip_code': '21000',
+        'address_one': 'Work Address 22A',
+        'address_two': 'Ground floor',
+    }
+
+
+@pytest.fixture
+def address_instance(user_home_address_data):
+    address_data = dict(user_home_address_data)
     address_data.pop('address_two')
     return Address.objects.create(**address_data)
 
@@ -58,35 +70,40 @@ def test_when_user_is_not_authenticated__all_address_views_are_inaccessible(api_
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
 
-def test_when_user_is_authenticated__they_can_create_an_address(
+def test_when_user_is_authenticated__they_can_create_multiple_addresses(
     authenticated_client,
-    user_address_data,
+    user_home_address_data,
+    user_work_address_data,
     authenticated_user
 ):
     _assert_address_and_user_address_counts(authenticated_user, 0, 0)
 
-    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
-    user_address = UserAddress.objects.get(user=authenticated_user)
+    for address_data in (user_home_address_data, user_work_address_data):
+        response = authenticated_client.post(
+            reverse('user-addresses-list'),
+            format='json',
+            data=address_data
+        )
+        user_address = UserAddress.objects.filter(user=authenticated_user).latest()
 
-    assert response.status_code == HTTP_201_CREATED
-    assert response.data == {
-        'uuid': str(user_address.address.uuid),
-        **user_address_data
-    }
+        assert response.status_code == HTTP_201_CREATED
+        assert response.data == {
+            'uuid': str(user_address.address.uuid),
+            **address_data
+        }
 
-    _assert_address_and_user_address_counts(authenticated_user, 1, 1)
+    _assert_address_and_user_address_counts(authenticated_user, 2, 2)
 
 
-@pytest.mark.django_db(transaction=True)
-def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
+def test_when_user_tries_to_add_a_duplicated_address__bad_request_is_returned(
     authenticated_client,
     user_address_instance,
-    user_address_data,
+    user_home_address_data,
     authenticated_user
 ):
     _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
-    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
+    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_home_address_data)
 
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert str(response.data['non_field_errors'][0]) == 'The fields user, address must make a unique set.'
@@ -97,18 +114,18 @@ def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
 def test_when_address_is_already_in_database__new_one_is_not_created(
     authenticated_client,
     address_instance,
-    user_address_data,
+    user_home_address_data,
     authenticated_user
 ):
     _assert_address_and_user_address_counts(authenticated_user, 1, 0)
 
-    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
+    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_home_address_data)
     user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_201_CREATED
     assert response.data == {
         'uuid': str(user_address.address.uuid),
-        **user_address_data
+        **user_home_address_data
     }
 
     _assert_address_and_user_address_counts(authenticated_user, 1, 1)
