@@ -21,7 +21,7 @@ class Address(models.Model):
         db_table = 'addresses'
         get_latest_by = 'created_at'
         ordering = ('created_at',)
-        unique_together = ('zip_code', 'address_one',)
+        unique_together = ('country', 'zip_code', 'address_one',)
 
         indexes = [
             models.Index(fields=('uuid',))
