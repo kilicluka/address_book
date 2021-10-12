@@ -129,10 +129,7 @@ def test_when_user_is_authenticated__they_can_create_multiple_addresses(
         user_address = UserAddress.objects.filter(user=authenticated_user).latest()
 
         assert response.status_code == HTTP_201_CREATED
-        assert response.data == {
-            'uuid': str(user_address.uuid),
-            **address_data
-        }
+        assert response.data == {'uuid': str(user_address.uuid), **address_data}
 
     _assert_address_and_user_address_counts(authenticated_user, 2, 2)
 
@@ -153,7 +150,7 @@ def test_when_user_tries_to_add_a_duplicated_address__bad_request_is_returned(
 
 
 @pytest.mark.usefixtures('home_address_instance')
-def test_when_address_is_already_in_database__new_one_is_not_created(
+def test_when_user_adds_a_new_address_which_is_already_in_database__new_address_instance_is_not_created(
     authenticated_client,
     get_home_address_data,
     authenticated_user,
@@ -169,10 +166,7 @@ def test_when_address_is_already_in_database__new_one_is_not_created(
     user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_201_CREATED
-    assert response.data == {
-        'uuid': str(user_address.uuid),
-        **home_address_data
-    }
+    assert response.data == {'uuid': str(user_address.uuid), **home_address_data}
 
     _assert_address_and_user_address_counts(authenticated_user, 1, 1)
 
@@ -197,7 +191,21 @@ def test_when_user_is_authenticated__they_can_retrieve_all_their_addresses(
     ]
 
 
-def test_when_user_updates_a_main_part_of_the_address__a_new_address_is_created(
+def test_when_user_is_authenticated__they_can_retrieve_an_address_by_its_uuid(
+    authenticated_client,
+    get_work_address_data,
+    user_work_address_instance,
+):
+    response = authenticated_client.get(
+        reverse('user-addresses-detail', kwargs={'uuid': user_work_address_instance.uuid}),
+        format='json',
+    )
+
+    assert response.status_code == HTTP_200_OK
+    assert response.data == {'uuid': str(user_work_address_instance.uuid), **get_work_address_data()}
+
+
+def test_when_user_updates_a_main_part_of_the_address_to_a_non_existing_one__a_new_address_is_created(
     authenticated_client,
     get_work_address_data,
     user_work_address_instance,
@@ -215,10 +223,7 @@ def test_when_user_updates_a_main_part_of_the_address__a_new_address_is_created(
 
     assert response.status_code == HTTP_200_OK
     assert response.data['uuid'] == str(user_work_address_instance.uuid)
-    assert response.data == {
-        'uuid': str(user_address.uuid),
-        **work_address_data
-    }
+    assert response.data == {'uuid': str(user_address.uuid), **work_address_data}
 
     _assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
 
