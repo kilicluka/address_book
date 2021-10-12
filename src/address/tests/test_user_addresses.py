@@ -1,9 +1,9 @@
 import pytest
 from django.urls import reverse
-from rest_framework.status import HTTP_201_CREATED, HTTP_401_UNAUTHORIZED
+from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from rest_framework.test import APIClient
 
-from address.models import UserAddress
+from address.models import Address, UserAddress
 
 pytestmark = pytest.mark.django_db
 
@@ -23,6 +23,21 @@ def user_address_data():
         'address_one': 'Split Address 15',
         'address_two': '',
     }
+
+
+@pytest.fixture
+def address_instance(user_address_data):
+    user_address_data.pop('address_two')
+    return Address.objects.create(**user_address_data)
+
+
+@pytest.fixture
+def user_address_instance(authenticated_user, address_instance):
+    return UserAddress.objects.create(
+        user=authenticated_user,
+        address=address_instance,
+        additional_address_data='5th floor, name: Jackson'
+    )
 
 
 @pytest.fixture
@@ -47,6 +62,9 @@ def test_when_user_is_authenticated__they_can_create_an_address(
     user_address_data,
     authenticated_user
 ):
+    assert UserAddress.objects.filter(user=authenticated_user).count() == 0
+    assert Address.objects.count() == 0
+
     response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
 
     user_address = UserAddress.objects.get(user=authenticated_user)
@@ -56,3 +74,24 @@ def test_when_user_is_authenticated__they_can_create_an_address(
         'uuid': str(user_address.address.uuid),
         **user_address_data
     }
+    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
+    assert Address.objects.count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_when_user_tries_to_add_duplicated_address__bad_request_is_returned(
+    authenticated_client,
+    user_address_instance,
+    user_address_data,
+    authenticated_user
+):
+    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
+    assert Address.objects.count() == 1
+
+    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=user_address_data)
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert response.data == 'You already have an address with those zip_code and address_one values.'
+
+    assert UserAddress.objects.filter(user=authenticated_user).count() == 1
+    assert Address.objects.count() == 1

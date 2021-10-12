@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework import validators
 
 from address.models import Address, UserAddress
 
@@ -16,29 +17,38 @@ class AddressSerializer(serializers.ModelSerializer):
             'address_one',
         ]
 
+    def run_validators(self, value):
+        """ Skip the unique together validation, since we don't want to punish users for not knowing that an address
+        already exists in the database.
+        """
+
+        for validator in self.validators:
+            if isinstance(validator, validators.UniqueTogetherValidator):
+                self.validators.remove(validator)
+        super().run_validators(value)
+
 
 class UserAddressSerializer(serializers.ModelSerializer):
-    address_two = serializers.CharField(allow_blank=True, required=False, default='')
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    address = AddressSerializer()
+    additional_address_data = serializers.CharField(source='address_two', allow_blank=True, required=False, default='')
 
     class Meta:
         model = UserAddress
-        fields = ['address_two']
+        fields = ['user', 'address', 'additional_address_data']
 
-    def validate(self, attrs):
-        super().validate(attrs)
-
-        address_serializer = AddressSerializer(data=self.initial_data)
-        address_serializer.is_valid(raise_exception=True)
-
-        return {**address_serializer.validated_data, **attrs}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        address_data = dict(self.initial_data)
+        self.initial_data = {'user': self.context['request'].user, 'address': address_data}
 
     def create(self, validated_data):
         address_two = validated_data.pop('address_two')
 
         address, _ = Address.objects.get_or_create(
-            zip_code=validated_data['zip_code'],
-            address_one=validated_data['address_one'],
-            defaults=validated_data
+            zip_code=validated_data['address']['zip_code'],
+            address_one=validated_data['address']['address_one'],
+            defaults=validated_data['address']
         )
 
         return UserAddress.objects.create(
