@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from address.models import Address, UserAddress
+from address.pagination import UserAddressPagination
 from address.swagger import swagger_method_decorators
 from address.serializers import AddressSerializer, UserAddressSerializer
 
@@ -20,6 +21,7 @@ from address.serializers import AddressSerializer, UserAddressSerializer
 class UserAddressViewSet(viewsets.ModelViewSet):
     serializer_class = UserAddressSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = UserAddressPagination
     lookup_url_kwarg = 'uuid'
 
     def create(self, request, *args, **kwargs):

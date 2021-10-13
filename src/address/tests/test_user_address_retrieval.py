@@ -7,11 +7,6 @@ from address.tests.conftest import assert_address_and_user_address_counts
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def pagination_settings(settings):
-    settings.REST_FRAMEWORK['PAGE_SIZE'] = 1
-
-
 def test_when_user_is_not_authenticated__they_can_not_retrieve_their_addresses(api_client):
     response = api_client.get(reverse('user-addresses-list'), format='json', data={})
     assert response.status_code == HTTP_401_UNAUTHORIZED
@@ -51,16 +46,15 @@ def test_when_the_number_of_addresses_exceeds_page_limit__result_is_paginated(
     user_home_address_instance,
     get_home_address_data,
     authenticated_client,
-    pagination_settings,
 ):
-    response = authenticated_client.get(reverse('user-addresses-list'), format='json')
+    response = authenticated_client.get(reverse('user-addresses-list'), data={'page_size': 1}, format='json')
 
     assert response.status_code == HTTP_200_OK
     response_data_copy = dict(response.data)
     results = response_data_copy.pop('results')
     assert response_data_copy == {
         'count': 2,
-        'next': 'http://testserver/user-addresses/?page=2',
+        'next': 'http://testserver/user-addresses/?page=2&page_size=1',
         'previous': None,
     }
     assert len(results) == 1
