@@ -1,3 +1,4 @@
+from django.utils.decorators import method_decorator
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -6,9 +7,16 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from address.models import Address, UserAddress
+from address.swagger import method_decorators
 from address.serializers import AddressSerializer, UserAddressSerializer
 
 
+@method_decorator(**method_decorators['list'])
+@method_decorator(**method_decorators['retrieve'])
+@method_decorator(**method_decorators['create'])
+@method_decorator(**method_decorators['update'])
+@method_decorator(**method_decorators['partial_update'])
+@method_decorator(**method_decorators['delete'])
 class UserAddressViewSet(viewsets.ModelViewSet):
     serializer_class = UserAddressSerializer
     permission_classes = [IsAuthenticated]
