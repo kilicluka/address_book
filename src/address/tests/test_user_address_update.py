@@ -61,20 +61,22 @@ def test_when_user_updates_a_main_part_of_the_address_to_an_existing_address__th
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
 
 
+@pytest.mark.usefixtures('user_home_address_instance')
 def test_when_user_tries_to_update_existing_address_which_would_result_in_a_duplicate__bad_request_is_returned(
     user_work_address_instance,
     get_work_address_data,
-    user_home_address_instance,
     get_home_address_data,
     authenticated_client,
 ):
-    assert_address_and_user_address_counts(user_home_address_instance.user, 2, 2)
+    assert_address_and_user_address_counts(user_work_address_instance.user, 2, 2)
     work_address_data = get_work_address_data(state='', address_one='Home Address 15')
 
     response = _send_update_request(authenticated_client, user_work_address_instance.uuid, work_address_data)
 
     assert response.status_code == HTTP_400_BAD_REQUEST
     assert str(response.data['non_field_errors'][0]) == 'The fields user, address must make a unique set.'
+    assert user_work_address_instance.address.address_one != 'Home Address 15'
+    assert user_work_address_instance.address.state != ''
 
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 2)
 
@@ -91,6 +93,7 @@ def test_when_user_attempts_to_update_an_address_not_belonging_to_them__not_foun
     )
 
     assert response.status_code == HTTP_404_NOT_FOUND
+    assert other_user_home_address_instance.address.address_one != 'Berlin Street 12'
 
 
 def _send_update_request(client, uuid, update_data):
