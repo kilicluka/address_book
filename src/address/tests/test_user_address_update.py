@@ -1,8 +1,7 @@
 import pytest
 from django.urls import reverse
-from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
 
-from address.models import UserAddress
 from address.tests.conftest import assert_address_and_user_address_counts
 
 pytestmark = pytest.mark.django_db
@@ -17,17 +16,14 @@ def test_when_user_updates_a_main_part_of_the_address_to_something_completely_ne
     authenticated_client,
     get_work_address_data,
     user_work_address_instance,
-    authenticated_user,
 ):
     assert_address_and_user_address_counts(user_work_address_instance.user, 1, 1)
     work_address_data = get_work_address_data(address_one='New York Address 55')
 
     response = _send_update_request(authenticated_client, user_work_address_instance.uuid, work_address_data)
-    user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_200_OK
-    assert response.data['uuid'] == str(user_work_address_instance.uuid)
-    assert response.data == {'uuid': str(user_address.uuid), **work_address_data}
+    assert response.data == {'uuid': str(user_work_address_instance.uuid), **work_address_data}
 
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
 
@@ -36,17 +32,14 @@ def test_when_user_updates_the_address_two_field__new_address_is_not_created(
     authenticated_client,
     get_home_address_data,
     user_home_address_instance,
-    authenticated_user,
 ):
     assert_address_and_user_address_counts(user_home_address_instance.user, 1, 1)
     home_address_data = get_home_address_data(address_two='Second Floor, first door to the right')
 
     response = _send_update_request(authenticated_client, user_home_address_instance.uuid, home_address_data)
-    user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_200_OK
-    assert response.data['uuid'] == str(user_home_address_instance.uuid)
-    assert response.data == {'uuid': str(user_address.uuid), **home_address_data}
+    assert response.data == {'uuid': str(user_home_address_instance.uuid), **home_address_data}
 
     assert_address_and_user_address_counts(user_home_address_instance.user, 1, 1)
 
@@ -56,19 +49,34 @@ def test_when_user_updates_a_main_part_of_the_address_to_an_existing_address__th
     get_work_address_data,
     user_work_address_instance,
     home_address_instance,
-    authenticated_user,
 ):
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
     work_address_data = get_work_address_data(state='', address_one='Home Address 15')
 
     response = _send_update_request(authenticated_client, user_work_address_instance.uuid, work_address_data)
-    user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_200_OK
-    assert response.data['uuid'] == str(user_work_address_instance.uuid)
-    assert response.data == {'uuid': str(user_address.uuid), **work_address_data}
+    assert response.data == {'uuid': str(user_work_address_instance.uuid), **work_address_data}
 
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
+
+
+def test_when_user_tries_to_update_existing_address_which_would_result_in_a_duplicate__bad_request_is_returned(
+    user_work_address_instance,
+    get_work_address_data,
+    user_home_address_instance,
+    get_home_address_data,
+    authenticated_client,
+):
+    assert_address_and_user_address_counts(user_home_address_instance.user, 2, 2)
+    work_address_data = get_work_address_data(state='', address_one='Home Address 15')
+
+    response = _send_update_request(authenticated_client, user_work_address_instance.uuid, work_address_data)
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert str(response.data['non_field_errors'][0]) == 'The fields user, address must make a unique set.'
+
+    assert_address_and_user_address_counts(user_work_address_instance.user, 2, 2)
 
 
 def test_when_user_attempts_to_update_an_address_not_belonging_to_them__not_found_is_returned(
