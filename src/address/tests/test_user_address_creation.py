@@ -13,7 +13,7 @@ def test_when_user_is_not_authenticated__they_can_not_create_addresses(api_clien
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
 
-def test_when_user_is_authenticated__they_can_create_multiple_addresses(
+def test_when_user_is_authenticated__they_can_create_addresses(
     authenticated_client,
     get_home_address_data,
     get_work_address_data,
@@ -22,11 +22,7 @@ def test_when_user_is_authenticated__they_can_create_multiple_addresses(
     assert_address_and_user_address_counts(authenticated_user, 0, 0)
 
     for address_data in (get_home_address_data(), get_work_address_data()):
-        response = authenticated_client.post(
-            reverse('user-addresses-list'),
-            format='json',
-            data=address_data
-        )
+        response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=address_data)
         user_address = UserAddress.objects.filter(user=authenticated_user).latest()
 
         assert response.status_code == HTTP_201_CREATED
@@ -35,7 +31,7 @@ def test_when_user_is_authenticated__they_can_create_multiple_addresses(
     assert_address_and_user_address_counts(authenticated_user, 2, 2)
 
 
-def test_when_user_tries_to_add_a_duplicated_address__bad_request_is_returned(
+def test_when_user_tries_to_add_a_duplicate_address__bad_request_is_returned(
     authenticated_client,
     user_home_address_instance,
     get_home_address_data,
@@ -57,13 +53,9 @@ def test_when_user_adds_a_new_address_which_is_already_in_database__new_address_
     authenticated_user,
 ):
     assert_address_and_user_address_counts(authenticated_user, 1, 0)
-    home_address_data = get_home_address_data('2nd Floor, Last Name')
+    home_address_data = get_home_address_data(address_two='2nd Floor, Last Name')
 
-    response = authenticated_client.post(
-        reverse('user-addresses-list'),
-        format='json',
-        data=home_address_data
-    )
+    response = authenticated_client.post(reverse('user-addresses-list'), format='json', data=home_address_data)
     user_address = UserAddress.objects.get(user=authenticated_user)
 
     assert response.status_code == HTTP_201_CREATED

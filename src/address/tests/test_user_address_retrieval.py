@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
+from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
 
 from address.tests.conftest import assert_address_and_user_address_counts
 
@@ -11,7 +11,7 @@ def test_when_user_is_not_authenticated__they_can_not_retrieve_their_addresses(a
     response = api_client.get(reverse('user-addresses-list'), format='json', data={})
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
-    response = api_client.get(reverse('user-addresses-list'), kwargs={'uuid': 'abc'}, format='json')
+    response = api_client.get(reverse('user-addresses-detail', kwargs={'uuid': 'abc'}), format='json')
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
 
@@ -47,3 +47,15 @@ def test_when_user_is_authenticated__they_can_retrieve_an_address_by_its_uuid(
 
     assert response.status_code == HTTP_200_OK
     assert response.data == {'uuid': str(user_work_address_instance.uuid), **get_work_address_data()}
+
+
+def test_when_user_attempts_to_retrieve_an_address_not_belonging_to_them__not_found_is_returned(
+    authenticated_client,
+    other_user_home_address_instance,
+):
+    response = authenticated_client.get(
+        reverse('user-addresses-detail', kwargs={'uuid': other_user_home_address_instance.uuid}),
+        format='json',
+    )
+
+    assert response.status_code == HTTP_404_NOT_FOUND

@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
+from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
 
 from address.models import UserAddress
 from address.tests.conftest import assert_address_and_user_address_counts
@@ -13,14 +13,14 @@ def test_when_user_is_not_authenticated__they_can_not_update_their_addresses(api
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
 
-def test_when_user_updates_a_main_part_of_the_address_to_a_non_existing_one__a_new_address_is_created(
+def test_when_user_updates_a_main_part_of_the_address_to_something_completely_new__a_new_address_is_created(
     authenticated_client,
     get_work_address_data,
     user_work_address_instance,
-    authenticated_user
+    authenticated_user,
 ):
     assert_address_and_user_address_counts(user_work_address_instance.user, 1, 1)
-    work_address_data = get_work_address_data('New York Address 55')
+    work_address_data = get_work_address_data(address_one='New York Address 55')
 
     response = authenticated_client.put(
         reverse('user-addresses-detail', kwargs={'uuid': user_work_address_instance.uuid}),
@@ -34,3 +34,40 @@ def test_when_user_updates_a_main_part_of_the_address_to_a_non_existing_one__a_n
     assert response.data == {'uuid': str(user_address.uuid), **work_address_data}
 
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
+
+
+def test_when_user_updates_the_address_two_field__new_address_is_not_created(
+    authenticated_client,
+    get_home_address_data,
+    user_home_address_instance,
+    authenticated_user,
+):
+    assert_address_and_user_address_counts(user_home_address_instance.user, 1, 1)
+    home_address_data = get_home_address_data(address_two='Second Floor, first door to the right')
+
+    response = authenticated_client.put(
+        reverse('user-addresses-detail', kwargs={'uuid': user_home_address_instance.uuid}),
+        format='json',
+        data=home_address_data
+    )
+    user_address = UserAddress.objects.get(user=authenticated_user)
+
+    assert response.status_code == HTTP_200_OK
+    assert response.data['uuid'] == str(user_home_address_instance.uuid)
+    assert response.data == {'uuid': str(user_address.uuid), **home_address_data}
+
+    assert_address_and_user_address_counts(user_home_address_instance.user, 1, 1)
+
+
+def test_when_user_attempts_to_update_an_address_not_belonging_to_them__not_found_is_returned(
+    authenticated_client,
+    other_user_home_address_instance,
+    get_work_address_data,
+):
+    response = authenticated_client.put(
+        reverse('user-addresses-detail', kwargs={'uuid': other_user_home_address_instance.uuid}),
+        format='json',
+        data=get_work_address_data(address_one='Berlin Street 12')
+    )
+
+    assert response.status_code == HTTP_404_NOT_FOUND
