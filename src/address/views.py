@@ -7,16 +7,16 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from address.models import Address, UserAddress
-from address.swagger import method_decorators
+from address.swagger import swagger_method_decorators
 from address.serializers import AddressSerializer, UserAddressSerializer
 
 
-@method_decorator(**method_decorators['list'])
-@method_decorator(**method_decorators['retrieve'])
-@method_decorator(**method_decorators['create'])
-@method_decorator(**method_decorators['update'])
-@method_decorator(**method_decorators['partial_update'])
-@method_decorator(**method_decorators['delete'])
+@method_decorator(**swagger_method_decorators['list'])
+@method_decorator(**swagger_method_decorators['retrieve'])
+@method_decorator(**swagger_method_decorators['create'])
+@method_decorator(**swagger_method_decorators['update'])
+@method_decorator(**swagger_method_decorators['partial_update'])
+@method_decorator(**swagger_method_decorators['delete'])
 class UserAddressViewSet(viewsets.ModelViewSet):
     serializer_class = UserAddressSerializer
     permission_classes = [IsAuthenticated]

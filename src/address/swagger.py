@@ -37,7 +37,7 @@ create_decorator = swagger_auto_schema(
 )
 delete_decorator = swagger_auto_schema(manual_parameters=[delete_uuids_parameter])
 
-method_decorators = {
+swagger_method_decorators = {
     'list': {
         'name': 'list',
         'decorator': get_decorator

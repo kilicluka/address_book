@@ -29,10 +29,15 @@ def test_when_user_is_authenticated__they_can_retrieve_all_their_addresses(
     response = authenticated_client.get(reverse('user-addresses-list'), format='json')
 
     assert response.status_code == HTTP_200_OK
-    assert response.data == [
-        {'uuid': str(user_work_address_instance.uuid), **get_work_address_data()},
-        {'uuid': str(user_home_address_instance.uuid), **get_home_address_data()}
-    ]
+    assert response.data == {
+        'count': 2,
+        'next': None,
+        'previous': None,
+        'results': [
+            {'uuid': str(user_work_address_instance.uuid), **get_work_address_data()},
+            {'uuid': str(user_home_address_instance.uuid), **get_home_address_data()}
+        ]
+    }
 
 
 def test_when_user_is_authenticated__they_can_retrieve_an_address_by_its_uuid(
