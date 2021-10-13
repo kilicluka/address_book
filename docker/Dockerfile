@@ -3,6 +3,7 @@ FROM python:3.10.0-alpine3.14 AS base
 ENV APP_GROUP server
 ENV APP_USER server
 ENV PROJECT_DIR /srv
+ENV PYTHONUNBUFFERED 1
 
 RUN set -ex \
     && apk update \
