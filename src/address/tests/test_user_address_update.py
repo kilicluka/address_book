@@ -44,11 +44,11 @@ def test_when_user_updates_the_address_two_field__new_address_is_not_created(
     assert_address_and_user_address_counts(user_home_address_instance.user, 1, 1)
 
 
+@pytest.mark.usefixtures('home_address_instance')
 def test_when_user_updates_a_main_part_of_the_address_to_an_existing_address__that_address_is_reused(
     authenticated_client,
     get_work_address_data,
     user_work_address_instance,
-    home_address_instance,
 ):
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
     work_address_data = get_work_address_data(state='', address_one='Home Address 15')
@@ -65,7 +65,6 @@ def test_when_user_updates_a_main_part_of_the_address_to_an_existing_address__th
 def test_when_user_tries_to_update_existing_address_which_would_result_in_a_duplicate__bad_request_is_returned(
     user_work_address_instance,
     get_work_address_data,
-    get_home_address_data,
     authenticated_client,
 ):
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 2)

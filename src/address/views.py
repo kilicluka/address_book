@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,6 +20,18 @@ class UserAddressViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         user_address = self.get_object()
         return Response(self._store_user_address(user_address), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['delete'])
+    def delete(self, request):
+        uuids_to_delete = request.data.get('uuids', '')
+        queryset = self.get_queryset()
+
+        if uuids_to_delete:
+            queryset = queryset.filter(uuid__in=uuids_to_delete.split(','))
+
+        queryset.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
         return UserAddress.objects.filter(user=self.request.user)
