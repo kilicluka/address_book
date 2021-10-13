@@ -28,6 +28,20 @@ def test_when_user_updates_a_main_part_of_the_address_to_something_completely_ne
     assert_address_and_user_address_counts(user_work_address_instance.user, 2, 1)
 
 
+def test_when_user_sends_a_single_field_instead_of_the_whole_object__bad_request_is_returned(
+    authenticated_client,
+    get_work_address_data,
+    user_work_address_instance,
+):
+
+    response = _send_update_request(authenticated_client, user_work_address_instance.uuid, {'address_one': 'A Street'})
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert user_work_address_instance.address.address_one != 'A Street'
+    for field in ('country', 'state', 'city', 'zip_code',):
+        assert str(response.data[field][0]) == 'This field is required.'
+
+
 def test_when_user_updates_the_address_two_field__new_address_is_not_created(
     authenticated_client,
     get_home_address_data,
