@@ -52,14 +52,14 @@ def user_home_address_instance(authenticated_user, home_address_instance, get_ho
 
 @pytest.fixture
 def get_work_address_data():
-    def _get_work_address_data(address_one='Work Address 22A'):
+    def _get_work_address_data(**kwargs):
         return {
-            'country': 'Croatia',
-            'state': 'Croatia',
-            'city': 'Split',
-            'zip_code': '21000',
-            'address_one': address_one,
-            'address_two': 'Ground Floor, Doe',
+            'country': kwargs.get('country', 'Croatia'),
+            'state': kwargs.get('state', 'Croatia'),
+            'city': kwargs.get('city', 'Split'),
+            'zip_code': kwargs.get('zip_code', '21000'),
+            'address_one': kwargs.get('address_one', 'Work Address 22A'),
+            'address_two': kwargs.get('address_two', 'Ground Floor, Doe'),
         }
     return _get_work_address_data
 
