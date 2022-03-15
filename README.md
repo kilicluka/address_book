@@ -1,5 +1,5 @@
 # Address Book
-Assignment for a senior backend engineer position at Qogita. A simple address book API where users can maintain their addresses.
+Assignment for a senior backend engineer position at <company>. A simple address book API where users can maintain their addresses.
 
 # Local development
 Docker and docker-compose are needed to run the project locally.
